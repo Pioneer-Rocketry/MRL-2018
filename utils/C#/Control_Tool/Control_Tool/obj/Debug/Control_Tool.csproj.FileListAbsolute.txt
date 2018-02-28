@@ -1,0 +1,9 @@
+C:\Users\Grant\Projects\snakeoil_2\Snakeoil\utils\C#\Control_Tool\Control_Tool\bin\Debug\Control_Tool.exe.config
+C:\Users\Grant\Projects\snakeoil_2\Snakeoil\utils\C#\Control_Tool\Control_Tool\bin\Debug\Control_Tool.exe
+C:\Users\Grant\Projects\snakeoil_2\Snakeoil\utils\C#\Control_Tool\Control_Tool\bin\Debug\Control_Tool.pdb
+C:\Users\Grant\Projects\snakeoil_2\Snakeoil\utils\C#\Control_Tool\Control_Tool\obj\Debug\Control_Tool.csprojResolveAssemblyReference.cache
+C:\Users\Grant\Projects\snakeoil_2\Snakeoil\utils\C#\Control_Tool\Control_Tool\obj\Debug\Control_Tool.Form1.resources
+C:\Users\Grant\Projects\snakeoil_2\Snakeoil\utils\C#\Control_Tool\Control_Tool\obj\Debug\Control_Tool.Properties.Resources.resources
+C:\Users\Grant\Projects\snakeoil_2\Snakeoil\utils\C#\Control_Tool\Control_Tool\obj\Debug\Control_Tool.csproj.GenerateResource.Cache
+C:\Users\Grant\Projects\snakeoil_2\Snakeoil\utils\C#\Control_Tool\Control_Tool\obj\Debug\Control_Tool.exe
+C:\Users\Grant\Projects\snakeoil_2\Snakeoil\utils\C#\Control_Tool\Control_Tool\obj\Debug\Control_Tool.pdb
