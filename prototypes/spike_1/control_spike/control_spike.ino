@@ -89,45 +89,15 @@ void setup() {
 
 void loop() {
 
-//  SensorHub::update();
+  SensorHub::update();
 
+  //Example for getting Gyro.
+  SensorHub::Gyro().x;
 
+  //Example for getting Accel.
+  SensorHub::Accel().x;
 
-/*  servo.update();
-  
-//  servo.setPower(sin( millis()/(float)500 ) * 20 );
-
-  
-
-  control->setP(P_TUNING);
-
-  control->setI(I_TUNING);
-
-  control->setD(D_TUNING);
-
-  control->setSetpoint(0);
-
-  control->setCurrentValue(SensorHub::getGyro().z);
-
-  control->update();
-
-  servo.setAcceleration(-control->getOutput());
-
-  //servo.setPower(-control->getOutput());
-
-//  Serial1.printf("%f, %f, %f, %f", control->getPropMult(), control->getDirMult(), control->getIntiMult(), control->getOutput());*/
-
-  // String dataString = "";
-
-//  float controlValue = SensorHub::g
-  //Serial.println(controlValue);
-//etGyro().z + 3;
-
-  
-
-//  servo.setPower(15);
   float power = sin((float)millis()/1000.0f) * 45.0f;
-
 
   servo.setPower(power);
 
@@ -135,82 +105,7 @@ void loop() {
 
   servo.update();
 
-/*  delay(500);
 
-  servo.setPower(-15);
-
-  servo.update();
-
-  delay(500);*/
-
-
-//  controlServoTwo.setPower(-controlValue);
-
-//  controlServo.update();
-
-//  controlServoTwo.update();
-
-/*  dataString += millis();
-
-  dataString += " , ";
-
-  dataString += SensorHub::getGyro().x;
-
-  dataString += " , ";
-
-  dataString += SensorHub::getGyro().y;
-
-  dataString += " , ";
-
-  dataString += SensorHub::getGyro().z;
-
-  dataString += " , ";
-
-  dataString += SensorHub::getAccel().x;
-
-  dataString += " , ";
-
-  dataString += SensorHub::getAccel().y;
-
-  dataString += " , ";
-
-  dataString += SensorHub::getAccel().z;
-
-  dataString += " , ";
-
-  dataString += SensorHub::getMag().x;
-
-  dataString += " , ";
-
-  dataString += SensorHub::getMag().y;
-
-  dataString += " , ";
-
-  dataString += SensorHub::getMag().z;
-
-  dataString += "\n";
-
-  Serial.print(dataString);*/
-
-/*  dataFile = SD.open("datalog1.csv", FILE_WRITE);
-  
-  if (dataFile) {
-    //Serial.println("Written");
-    dataFile.print(dataString);
-    dataFile.flush();
-    dataFile.close();
-  }*/
-
-/*  if(millis() / 2000 <= 1000)
-  {
-    servo.setPower(20);
-  }
-  else
-  {
-
-    servo.setPower(0);
-    
-  }*/
   
 }
 
