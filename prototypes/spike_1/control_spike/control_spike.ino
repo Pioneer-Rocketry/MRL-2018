@@ -28,12 +28,19 @@ AbstractServo servo(1100, 1940, 2, -45.0f, 45.0f);
 AbstractServo controlServo(1000, 2000, 3, -250.0f, 250.0f);
 AbstractServo controlServoTwo(1000, 2000, 4, -250.0f, 250.0f);
 
+enum states{PRELAUNCH, PREBURNOUT, BURNOUT, POSTAPOGEE, LANDING};
+
+states launchState = PRELAUNCH;
 
 Controller * control = new Controller();
 
 File dataFile;
 
 const int chipSelect = 53;
+const float accLimitFreeFall = .1;
+const float accLimitLaunch = 1;
+const int currentTime = 0;
+const int preLaunchStartTime = 0;
 
 void setup() {
   // put your setup code here, to run once:
@@ -84,7 +91,7 @@ void setup() {
     dataFile.close();
   }
 
-
+  
 }
 
 void loop() {
@@ -104,7 +111,32 @@ void loop() {
   Serial.println(power);
 
   servo.update();
-
+  
+  switch(launchState){
+    case PRELAUNCH:
+      if( SensorHub::Accel().z > accLimitLaunch ){
+        launchState = PREBURNOUT;
+        preLaunchStartTime = millis;
+      }
+      break;
+    case PREBURNOUT:
+      currentTime = millis;
+      if( currentTime - preLaunchStartTime >= preBurnoutLength ){
+        launchState = BURNOUT;
+      }
+    case BURNOUT:
+      if( SensorHub::Accel.z > accLimitFreeFall ){
+        launchState = POSTAPOGEE;
+      }
+    case POSTAPOGEE:
+      if( impactDetected == true ){
+        launchState = LANDING;
+      }
+    case default:
+      launchState = LANDING; /* Was not sure what to do for the default but this 
+                                this made sense to me */
+  }
+  
 
   
 }
