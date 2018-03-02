@@ -26,6 +26,8 @@
 #define MAX_ACCEL   2
 #define MAX_MAG     1200
 
+#define BARO_READ_RATE 1000 // Every 1000 milliseconds we can read from the barometer.
+
 //#define INVERSE_ACCEL_Y
 //#define INVERSE_ACCEL_Z
 //#define INVERSE_Z
@@ -47,6 +49,8 @@ point SensorHub::accel;
 point SensorHub::mag;
 point SensorHub::gyro;
 
+float SensorHub::altitude;
+
 quaternion SensorHub::orient;
 
 MPU6050 mpu;
@@ -60,6 +64,10 @@ uint16_t SensorHub::lastUpdate = 0;
 uint16_t SensorHub::now = 0;           
 
 float SensorHub::deltat = 0.0;
+
+Adafruit_MPL3115A2 baro = Adafruit_MPL3115A2();
+
+unsigned long last_baro_read = 0;
 
 //Initialize sensors and sensor readings.
 void SensorHub::init()
@@ -110,10 +118,14 @@ void SensorHub::update()
   radGyro.x = gyro.x*PI/180.0f;
   radGyro.y = gyro.y*PI/180.0f;
   radGyro.z = gyro.z*PI/180.0f;
-  
-      
-  orient = KalmanFilter::MadgwickQuaternionUpdate(accel, radGyro, mag, orient, deltat);
 
+  //orient = KalmanFilter::MadgwickQuaternionUpdate(accel, radGyro, mag, orient, deltat);
+  
+  if(millis() - last_baro_read > BARO_READ_RATE)
+  {
+    altitude = baro.getAltitude();
+    last_baro_read = millis();
+  }
 }
 
 quaternion SensorHub::filteredOrientation()
@@ -121,7 +133,7 @@ quaternion SensorHub::filteredOrientation()
 	return orient;
 }
 
-point SensorHub::localToGlobal(point p)
+/*point SensorHub::localToGlobal(point p)
 {
 	quaternion pointQ;
 
@@ -162,7 +174,7 @@ point SensorHub::globalToLocal(point p)
 
 	return finalPoint;
 
-}
+}*/
 
 point SensorHub::getAccel()
 {
@@ -177,6 +189,11 @@ point SensorHub::getMag()
 point SensorHub::getGyro()
 {
   return gyro;
+}
+
+float SensorHub::getAltitude()
+{
+  return altitude;
 }
 
 

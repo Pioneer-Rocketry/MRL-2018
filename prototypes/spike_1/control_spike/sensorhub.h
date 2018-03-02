@@ -7,11 +7,13 @@
 #define SENSORHUB_H
 
 #include "dimensionals.h"
-#include "quatops.h"
-#include "kalmanfilter.h"
+//#include "quatops.h"
+//#include "kalmanfilter.h"
 //#include <SPI.h> // Included for SFE_LSM9DS0 library
 #include <Wire.h>
 //#include <mpu9250.h>
+
+#include "Adafruit_MPL3115A2.h"
 
 // SDO_XM and SDO_G are both grounded, so our addresses are:
 #define LSM9DS0_XM  0x1D // Would be 0x1E if SDO_XM is LOW
@@ -33,15 +35,17 @@ public:
 
 	static void update();
 
-	static point localToGlobal(point p);
+/*	static point localToGlobal(point p);
 
-	static point globalToLocal(point p);
+	static point globalToLocal(point p);*/
 
 	static point getAccel();
 
 	static point getMag();
 
 	static point getGyro();
+
+  static float getAltitude();
 
 	static quaternion filteredOrientation();
 
@@ -56,6 +60,7 @@ protected:
 
 	static quaternion orient;
 
+  static float altitude;
 
 	static uint16_t lastUpdate;    
 	static uint16_t now;           
