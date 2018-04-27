@@ -1,0 +1,24 @@
+Teensy 3.6 - 1568-1465-ND 
+
+SparkFun 9DoF Sensor Stick - 1568-1424-ND 
+
+Adafruit MPL3115A2 BAROMETER SENSE BOARD - 1528-1034-ND 
+
+DC-DC converter - 1528-2004-ND x4
+
+5v regulator 
+
+Female headers for Teensy - S7022-ND 
+
+Female headers for 9Dof - S7002-ND 
+
+Male headers for 9Dof - S9014E-50-ND
+
+Standoff for 9Dof - RPC3019-ND
+
+Screws for standoff - H742-ND
+ 
+
+
+
+

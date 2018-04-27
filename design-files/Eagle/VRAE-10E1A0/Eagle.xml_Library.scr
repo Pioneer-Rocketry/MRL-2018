@@ -1,0 +1,75 @@
+# Created by Ultra Librarian Gold 8.2.165 Copyright © 1999-2017
+# Frank Frank, Accelerated Designs
+
+Grid mil;
+Set Wire_Bend 2;
+
+
+Edit 'VRAE.pac';
+Change Drill 30;
+Pad '1' Square 0 50 R0 (-268 0);
+Change Drill 30;
+Pad '2' Round 0 50 R0 (-201 0);
+Change Drill 30;
+Pad '3' Round 0 50 R0 (-134 0);
+Change Drill 30;
+Pad '4' Round 0 50 R0 (-67 0);
+Change Drill 30;
+Pad '5' Round 0 50 R0 (0 0);
+Layer 21;
+Wire 6 (-354 -175) (86 -175);
+Wire 6 (86 -175) (86 175);
+Wire 6 (86 175) (-354 175);
+Wire 6 (-354 175) (-354 -175);
+Change Size 50;
+Change Ratio 6;
+Text '*' SR0 (-412 -25);
+Layer 51;
+Wire 6 (-349 -170) (81 -170);
+Wire 6 (81 -170) (81 170);
+Wire 6 (81 170) (-349 170);
+Wire 6 (-349 170) (-349 -170);
+Change Size 50;
+Change Ratio 6;
+Text '*' SR0 (-362 -25);
+Layer 25;
+Change Size 50;
+Change Ratio 6;
+Text '>Name' SR0 (-263 -25);
+Layer 27;
+
+Edit 'VRAE.sym';
+Layer 94;
+Pin '1' Pas None Middle R0 Both 0 (100 0)
+Pin '2' Pas None Middle R0 Both 0 (100 -100)
+Pin '3' Pas None Middle R180 Both 0 (1700 -200)
+Pin '4' Pas None Middle R180 Both 0 (1700 -100)
+Pin '5' Pas None Middle R180 Both 0 (1700 0)
+Wire 6 (300 200) (300 -400);
+Wire 6 (300 -400) (1500 -400);
+Wire 6 (1500 -400) (1500 200);
+Wire 6 (1500 200) (300 200);
+Layer 97;
+Layer 95;
+Change Size 82;
+Change Ratio 6;
+Text '>Name' SR0 (714 359);
+Layer 96;
+Change Size 82;
+Change Ratio 6;
+Text '>Value' SR0 (689 259);
+
+Edit 'VRAE-10E1A0G.dev';
+Prefix 'U';
+Description '';
+Value Off;
+Add VRAE 'A' Next  0 (0 0);
+Package 'VRAE';
+Technology '';
+Attribute Vendor 'Belfuse';
+Attribute Manufacturer_Part_Number 'VRAE10E1A0G';
+Connect 'A.1' '1';
+Connect 'A.2' '2';
+Connect 'A.3' '3';
+Connect 'A.4' '4';
+Connect 'A.5' '5';

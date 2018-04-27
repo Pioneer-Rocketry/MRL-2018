@@ -1,0 +1,20 @@
+Data we have:
+
+	velocity along body 
+
+	3 euler angles (x, y, z)
+
+Processing on data: 
+	Kalman filter - state estimation
+
+	
+	Control system:
+		Output - attack angle for each servo
+
+		
+Input data:
+
+	Control goal angles
+	Control time periods
+	
+	

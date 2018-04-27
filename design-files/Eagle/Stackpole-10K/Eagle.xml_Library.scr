@@ -1,0 +1,87 @@
+# Created by Ultra Librarian Gold 8.2.165 Copyright © 1999-2017
+# Frank Frank, Accelerated Designs
+
+Grid mil;
+Set Wire_Bend 2;
+
+
+Edit 'STA_CF14.pac';
+Change Drill 35;
+Pad '1' Square 0 55 R0 (-450 0);
+Change Drill 35;
+Pad '2' Round 0 55 R180 (0 0);
+Layer 21;
+Wire 6 (-538 0) (-491 0);
+Wire 6 (-512 25) (-512 -25);
+Wire 6 (-354 -56) (-96 -56);
+Wire 6 (-96 -56) (-96 56);
+Wire 6 (-96 56) (-354 56);
+Wire 6 (-354 56) (-354 -56);
+Layer 51;
+Wire 6 (-538 0) (-488 0);
+Wire 6 (-512 25) (-512 -25);
+Wire 6 (-450 0) (-349 0);
+Wire 6 (0 0) (-101 0);
+Wire 6 (-349 -52) (-101 -52);
+Wire 6 (-101 -52) (-101 52);
+Wire 6 (-101 52) (-349 52);
+Wire 6 (-349 52) (-349 -52);
+Layer 25;
+Change Size 50;
+Change Ratio 6;
+Text '>Name' SR0 (-354 -25);
+Layer 27;
+
+Edit 'RES.sym';
+Layer 94;
+Pin '11' Pas None Short R0 Pin 1 (0 0)
+Pin '22' Pas None Short R180 Off 1 (500 0)
+Wire 8 (125 50) (175 -50);
+Wire 8 (175 -50) (225 50);
+Wire 8 (225 50) (275 -50);
+Wire 8 (275 -50) (325 50);
+Wire 8 (325 50) (375 -50);
+Wire 8 (100 0) (125 50);
+Wire 8 (375 -50) (400 0);
+Layer 97;
+Layer 96;
+Change Size 137;
+Change Ratio 10;
+Text '>Value' SR0 (-103 -218);
+Layer 95;
+Change Size 137;
+Change Ratio 10;
+Text '>Name' SR0 (-86 82);
+
+Edit 'RESV.sym';
+Layer 94;
+Pin '1' Pas None Short R270 Off 1 (0 500)
+Pin '2' Pas None Short R90 Off 1 (0 0)
+Wire 8 (0 100) (-50 125);
+Wire 8 (-50 125) (50 175);
+Wire 8 (50 175) (-50 225);
+Wire 8 (-50 225) (50 275);
+Wire 8 (-50 325) (50 375);
+Wire 8 (50 375) (0 400);
+Wire 8 (50 275) (-50 325);
+Layer 97;
+Layer 96;
+Change Size 137;
+Change Ratio 10;
+Text '>Value' SR0 (75 132);
+Layer 95;
+Change Size 137;
+Change Ratio 10;
+Text '>Name' SR0 (75 256);
+
+Edit 'CF14JT10K0.dev';
+Prefix 'R';
+Description '';
+Value Off;
+Add RES 'A' Next  1 (0 0);
+Package 'STA_CF14';
+Technology '';
+Attribute Manufacturer_Part_Number 'CF14JT10K0';
+Attribute Vendor 'Stackpole International';
+Connect 'A.11' '1';
+Connect 'A.22' '2';

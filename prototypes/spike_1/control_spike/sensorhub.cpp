@@ -22,11 +22,11 @@
 #include "Wire.h"
 
 #define MAX_16_BITS 0xFFFF
-#define MAX_GYRO    250
-#define MAX_ACCEL   2
-#define MAX_MAG     1200
+//#define MAX_GYRO    250
+//#define MAX_ACCEL   2
+//#define MAX_MAG     1200
 
-#define BARO_READ_RATE 1000 // Every 1000 milliseconds we can read from the barometer.
+#define BARO_READ_RATE 1100 // Every 1100 milliseconds we can read from the barometer.
 
 //#define INVERSE_ACCEL_Y
 //#define INVERSE_ACCEL_Z
@@ -69,6 +69,9 @@ Adafruit_MPL3115A2 baro = Adafruit_MPL3115A2();
 
 unsigned long last_baro_read = 0;
 
+int MAX_GYRO = 250;
+int MAX_ACCEL = 4;
+int MAX_MAG = 1200;
 //Initialize sensors and sensor readings.
 void SensorHub::init()
 {
@@ -86,6 +89,14 @@ void SensorHub::init()
   Serial.begin(38400);
 
   mpu.initialize();
+
+  mpu.setFullScaleAccelRange(MPU6050_ACCEL_FS_4);
+  MAX_ACCEL = 4; 
+
+  mpu.setFullScaleGyroRange(MPU6050_GYRO_FS_250);
+  MAX_GYRO = 250;
+
+  baro.begin();
   
 }
 
@@ -98,20 +109,54 @@ void SensorHub::update()
   deltat = (now - lastUpdate) / 1000.0f;
 
   lastUpdate = now;
+
+  float temp = 0;
   
   mpu.getMotion9(&ax, &ay, &az, &gx, &gy, &gz, &mx, &my, &mz);
+
+  //Swapping z and y on the accelerometer and gyro
 
   gyro.x = (float)gx/(float)MAX_16_BITS * MAX_GYRO * 2;
   gyro.y = (float)gy/(float)MAX_16_BITS * MAX_GYRO * 2;
   gyro.z = (float)gz/(float)MAX_16_BITS * MAX_GYRO * 2;
 
+  temp = gyro.z;
+  gyro.z = gyro.y;
+  gyro.y = temp;
+
+
   accel.x = (float)ax/(float)MAX_16_BITS * MAX_ACCEL * 2;
   accel.y = (float)ay/(float)MAX_16_BITS * MAX_ACCEL * 2;
   accel.z = (float)az/(float)MAX_16_BITS * MAX_ACCEL * 2;
 
+  temp = accel.z;
+  accel.z = accel.y;
+  accel.y = temp;
+
+  
+
+  //The magnetometer maps really weird. 
+  //For the default on 
+  //M.x = A.y
+  //M.y = A.x
+  //M.z = -A.z
+
   mag.x = (float)mx/(float)MAX_16_BITS * MAX_MAG * 2;
   mag.y = (float)my/(float)MAX_16_BITS * MAX_MAG * 2;
   mag.z = (float)mz/(float)MAX_16_BITS * MAX_MAG * 2;
+
+  //So, swap x and y. And invert z.
+
+  temp = mag.x;
+  mag.x = mag.y;
+  mag.y = temp;
+
+  temp = mag.z;
+  mag.z = mag.y;
+  mag.y = temp;
+
+
+  
 
   //The madgwick function works in radians. So the gyro readings need to be converted quick. 
   point radGyro;
@@ -120,12 +165,38 @@ void SensorHub::update()
   radGyro.z = gyro.z*PI/180.0f;
 
   //orient = KalmanFilter::MadgwickQuaternionUpdate(accel, radGyro, mag, orient, deltat);
+
+  if(!(baro.read8(MPL3115A2_CTRL_REG1) & MPL3115A2_CTRL_REG1_OST))
+  {
+
+    altitude = baro.getAltitude();
+    last_baro_read = millis();
+
+
+    if(!(baro.read8(MPL3115A2_CTRL_REG1) & MPL3115A2_CTRL_REG1_OST))
+    {  
+      baro._ctrl_reg1.bit.ALT = 1;
+      baro.write8(MPL3115A2_CTRL_REG1, baro._ctrl_reg1.reg);
+    
+      baro._ctrl_reg1.bit.OST = 1;
+      baro.write8(MPL3115A2_CTRL_REG1, baro._ctrl_reg1.reg);
+    
+      uint8_t sta = 0;
+      sta = baro.read8(MPL3115A2_REGISTER_STATUS);
+      if (! (sta & MPL3115A2_REGISTER_STATUS_PDR)) {
+        sta = baro.read8(MPL3115A2_REGISTER_STATUS);
+      }
+
+      altitude = baro.getAltitude();
+    
+    }
+  }
   
-  if(millis() - last_baro_read > BARO_READ_RATE)
+/*  if(millis() - last_baro_read > BARO_READ_RATE)
   {
     altitude = baro.getAltitude();
     last_baro_read = millis();
-  }
+  }*/
 }
 
 quaternion SensorHub::filteredOrientation()
