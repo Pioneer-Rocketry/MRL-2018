@@ -262,13 +262,10 @@ void loop() {
     servo3.writeMicroseconds(MID_SERVO);  
   }
 
-
-    get_write_data();
-
 // write data at constant time intervals 
   if(millis() - last_write >= WRITE_RATE){
     SensorHub::update();
-
+    get_write_data();
     last_write = millis();
 
   }
