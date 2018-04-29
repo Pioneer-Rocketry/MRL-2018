@@ -18,7 +18,11 @@
 
 #define SERVO_HIGH 2000
 #define SERVO_LOW  1000
-#define MID_SERVO  1500
+#define MID_SERVO  1500     
+
+#define SERVO_OFFSET_1 0
+#define SERVO_OFFSET_2 0 
+#define SERVO_OFFSET_3 0        
 
 #define MAGNITUDE 250.0f
 
@@ -61,6 +65,66 @@ long micros_last;
 
 File dataFile;
 
+
+void get_write_data(){
+    dataString = "";
+  
+    dataString += millis();
+    dataString += " , ";
+  
+    dataString += SensorHub::getGyro().x;
+    dataString += " , ";
+  
+    dataString += SensorHub::getGyro().y;
+    dataString += " , ";
+  
+    dataString += SensorHub::getGyro().z;
+    dataString += " , ";
+  
+  
+    dataString += SensorHub::getAccel().x;
+    dataString += " , ";
+  
+    dataString += SensorHub::getAccel().y;
+    dataString += " , ";
+  
+    dataString += SensorHub::getAccel().z;
+    dataString += " , ";
+  
+    
+    dataString += SensorHub::getMag().x;
+    dataString += " , ";
+  
+    dataString += SensorHub::getMag().y;
+    dataString += " , ";
+  
+    dataString += SensorHub::getMag().z;
+    dataString += " , ";
+  
+    dataString += SensorHub::getAltitude();
+    dataString += " , ";
+
+    dataString += SensorHub::getSpeed();
+    dataString += " , ";
+  
+    dataString += power;
+    dataString += " , ";
+  
+    dataString += stateString;
+  
+    dataString += "\n";
+
+    Serial.print(dataString);
+  
+    if (dataFile) {
+      dataFile.print(dataString);
+      dataFile.flush();
+      Serial1.print(dataString);
+    }
+}// end function get_write_data
+
+
+
 void setup() {
 
   //Attach to servos
@@ -69,11 +133,12 @@ void setup() {
   servo3.attach(SERVO_THREE_PIN);
 
   //Zero out servos. Doing this first incase we reboot mid-flight.
-  servo1.writeMicroseconds((SERVO_HIGH - SERVO_LOW)/2 + SERVO_LOW);
-  servo2.writeMicroseconds((SERVO_HIGH - SERVO_LOW)/2 + SERVO_LOW);
-  servo3.writeMicroseconds((SERVO_HIGH - SERVO_LOW)/2 + SERVO_LOW);
-
-
+ // servo1.writeMicroseconds((SERVO_HIGH - SERVO_LOW)/2 + SERVO_LOW);
+  //servo2.writeMicroseconds((SERVO_HIGH - SERVO_LOW)/2 + SERVO_LOW);
+ // servo3.writeMicroseconds((SERVO_HIGH - SERVO_LOW)/2 + SERVO_LOW);
+  servo1.writeMicroseconds( MID_SERVO + SERVO_OFFSET_1);
+  servo2.writeMicroseconds( MID_SERVO + SERVO_OFFSET_2);
+  servo3.writeMicroseconds( MID_SERVO + SERVO_OFFSET_3);
 
   Serial.begin(57600);
 
@@ -127,6 +192,10 @@ long last_read = 0;
 long last_write = 0;
 
 float RADS_TO_DEGREES;
+long currentTime;
+float currentState = 1.0;
+int oneDegree = 5; //millsec per degree
+int stepLength = 500; // millsecs
 
 void loop() {
 
@@ -146,11 +215,11 @@ void loop() {
       break;
     case BURNOUT:
       stateString = "BURNOUT";
-      power = sin(((float)millis()/1000.0f) * 2 * PI) * MAGNITUDE + MID_SERVO;
+      //power = sin(((float)millis()/1000.0f) * 2 * PI) * MAGNITUDE + MID_SERVO;
   
-      servo1.writeMicroseconds((int)power);
-      servo2.writeMicroseconds((int)power);
-      servo3.writeMicroseconds((int)power);
+      //servo1.writeMicroseconds( MID_SERVO + SERVO_OFFSET_1);
+      //servo2.writeMicroseconds( MID_SERVO + SERVO_OFFSET_2);
+      //servo3.writeMicroseconds( MID_SERVO + SERVO_OFFSET_3);
   
       if( SensorHub::getAccel().z > accLimitFreeFall ){
         launchState = POSTAPOGEE;
@@ -168,8 +237,7 @@ void loop() {
     
   }
   
-  if(launchState != BURNOUT)
-  {
+  if(launchState != BURNOUT){
     power = MID_SERVO;
     servo1.writeMicroseconds(MID_SERVO);
     servo2.writeMicroseconds(MID_SERVO);
@@ -177,73 +245,28 @@ void loop() {
   }
 
   
-
-  if(millis() - last_write >= WRITE_RATE)
-  {
-  
-    dataString = "";
-  
-    dataString += millis();
-    dataString += " , ";
-  
-    dataString += SensorHub::getGyro().x;
-    dataString += " , ";
-  
-    dataString += SensorHub::getGyro().y;
-    dataString += " , ";
-  
-    dataString += SensorHub::getGyro().z;
-    dataString += " , ";
-  
-  
-    dataString += SensorHub::getAccel().x;
-    dataString += " , ";
-  
-    dataString += SensorHub::getAccel().y;
-    dataString += " , ";
-  
-    dataString += SensorHub::getAccel().z;
-    dataString += " , ";
-  
-    
-    dataString += SensorHub::getMag().x;
-    dataString += " , ";
-  
-    dataString += SensorHub::getMag().y;
-    dataString += " , ";
-  
-    dataString += SensorHub::getMag().z;
-    dataString += " , ";
-  
-    dataString += SensorHub::getAltitude();
-    dataString += " , ";
-
-    dataString += SensorHub::getSpeed();
-    dataString += " , ";
-  
-    dataString += power;
-    dataString += " , ";
-  
-    dataString += stateString;
-  
-    dataString += "\n";
-
-    Serial.print(dataString);
-  
-    if (dataFile) {
-      dataFile.print(dataString);
-      dataFile.flush();
-    }
-
+// write data at constant time intervals 
+  if(millis() - last_write >= WRITE_RATE){
+    SensorHub::update();
+    get_write_data();
     last_write = millis();
 
   }
 
-  SensorHub::update();
+// change fins at set times ( step response )
+  currentTime = mills();
+  if( currentTime - lastStep >= stepLength && launchState == BURNOUT){
+    if(currentState > 0){
+      currentState = -currentState;
+      servo1.writeMicroseconds( currentState*oneDegree + MID_SERVO + SERVO_OFFSET_1);
+      servo1.writeMicroseconds( currentState*oneDegree + MID_SERVO + SERVO_OFFSET_2);
+      servo1.writeMicroseconds( currentState*oneDegree + MID_SERVO + SERVO_OFFSET_3);
+    }
+    lastStep = currentTime;
+  }
 
 
-
-}
+}// end of main loop
 
 
 
