@@ -12,9 +12,9 @@
 #include "quatops.h"
 #include "sensorhub.h"
 
-#define SERVO_ONE_PIN 1         
-#define SERVO_TWO_PIN 2
-#define SERVO_THREE_PIN 3
+#define SERVO_ONE_PIN 2         
+#define SERVO_TWO_PIN 3
+#define SERVO_THREE_PIN 4
 
 #define SERVO_HIGH 2000
 #define SERVO_LOW  1000
@@ -37,7 +37,7 @@ const int sd_chipSelect = BUILTIN_SDCARD;
 
 const float accLimitFreeFall = .1;
 const float accLimitLaunch = 2;
-const int preBurnoutLength = 2500;
+const int preBurnoutLength = 2700;
 
 enum states{PRELAUNCH, PREBURNOUT, BURNOUT, POSTAPOGEE, LANDING};
 
@@ -116,10 +116,11 @@ void get_write_data(){
 
     Serial.print(dataString);
   
+    Serial1.print(dataString);
+  
     if (dataFile) {
       dataFile.print(dataString);
       dataFile.flush();
-      Serial1.print(dataString);
     }
 }// end function get_write_data
 
@@ -144,9 +145,6 @@ void setup() {
 
   //Starting XBee serial.
   Serial1.begin(57600);
-
-
-  while(!Serial) ;
 
   //Initialize all sensors
   //SensorHub::init();
@@ -173,7 +171,7 @@ void setup() {
   do
   {
 
-    sprintf(name_string, "MRL-Data-%d.csv", count);
+    sprintf(name_string, "MRLData%d.csv", count);
 
     Serial.println(name_string);
 
@@ -181,9 +179,17 @@ void setup() {
 
   }while(SD.exists(name_string));
 
+  
+
   dataFile = SD.open(name_string, FILE_WRITE);
 
+  dataFile.print("sd start");
+  dataFile.flush();
+
+  Serial.println("SD started");
+
   SensorHub::init();
+
 
 }
 
@@ -193,15 +199,17 @@ long last_write = 0;
 
 float RADS_TO_DEGREES;
 long currentTime;
-float currentState = 1.0;
-int oneDegree = 5; //millsec per degree
+int currentState = 1;
+int oneDegree = 50; //millsec per degree
 int stepLength = 500; // millsecs
+long lastStep = 0;
 
 void loop() {
 
   switch(launchState){
     case PRELAUNCH:
       stateString = "PRELAUNCH";
+      
       if( SensorHub::getAccel().z > accLimitLaunch ){
         launchState = PREBURNOUT;
         preLaunchStartTime = millis();
@@ -215,11 +223,21 @@ void loop() {
       break;
     case BURNOUT:
       stateString = "BURNOUT";
-      //power = sin(((float)millis()/1000.0f) * 2 * PI) * MAGNITUDE + MID_SERVO;
-  
-      //servo1.writeMicroseconds( MID_SERVO + SERVO_OFFSET_1);
-      //servo2.writeMicroseconds( MID_SERVO + SERVO_OFFSET_2);
-      //servo3.writeMicroseconds( MID_SERVO + SERVO_OFFSET_3);
+
+        if( millis() - lastStep >= stepLength){
+
+        currentState = -currentState;
+
+        power =  currentState*oneDegree + MID_SERVO;
+
+        Serial.println(power);
+
+        servo1.writeMicroseconds(power  + SERVO_OFFSET_1);
+        servo2.writeMicroseconds(power  + SERVO_OFFSET_2);
+        servo3.writeMicroseconds(power  + SERVO_OFFSET_3);
+      
+        lastStep = millis();
+      }
   
       if( SensorHub::getAccel().z > accLimitFreeFall ){
         launchState = POSTAPOGEE;
@@ -244,26 +262,19 @@ void loop() {
     servo3.writeMicroseconds(MID_SERVO);  
   }
 
-  
+
+    get_write_data();
+
 // write data at constant time intervals 
   if(millis() - last_write >= WRITE_RATE){
     SensorHub::update();
-    get_write_data();
+
     last_write = millis();
 
   }
 
 // change fins at set times ( step response )
-  currentTime = mills();
-  if( currentTime - lastStep >= stepLength && launchState == BURNOUT){
-    if(currentState > 0){
-      currentState = -currentState;
-      servo1.writeMicroseconds( currentState*oneDegree + MID_SERVO + SERVO_OFFSET_1);
-      servo1.writeMicroseconds( currentState*oneDegree + MID_SERVO + SERVO_OFFSET_2);
-      servo1.writeMicroseconds( currentState*oneDegree + MID_SERVO + SERVO_OFFSET_3);
-    }
-    lastStep = currentTime;
-  }
+
 
 
 }// end of main loop

@@ -28,14 +28,14 @@
 
 
 uint8_t OSR = ADC_4096;      // set pressure amd temperature oversample rate
-uint8_t Gscale = GFS_245DPS; // gyro full scale
-uint8_t Godr = GODR_238Hz;   // gyro data sample rate
+uint8_t Gscale = GFS_2000DPS; // gyro full scale
+uint8_t Godr = GODR_952Hz;   // gyro data sample rate
 uint8_t Gbw = GBW_med;       // gyro data bandwidth
-uint8_t Ascale = AFS_2G;     // accel full scale
-uint8_t Aodr = AODR_238Hz;   // accel data sample rate
+uint8_t Ascale = AFS_4G;     // accel full scale
+uint8_t Aodr = AODR_952Hz;   // accel data sample rate
 uint8_t Abw = ABW_50Hz;      // accel data bandwidth
 uint8_t Mscale = MFS_4G;     // mag full scale
-uint8_t Modr = MODR_10Hz;    // mag data sample rate
+uint8_t Modr = MODR_80Hz;    // mag data sample rate
 uint8_t Mmode = MMode_HighPerformance;  // magnetometer operation mode
 float aRes, gRes, mRes;      // scale resolutions per LSB for the sensors
 
@@ -351,10 +351,15 @@ bool SensorHub::init()
 
   Wire.begin(I2C_MASTER, 0x00, I2C_PINS_16_17, I2C_PULLUP_EXT, I2C_RATE_400);
 
+  Serial.println("Sensorhub Init!");
+
+
   orient.a = 1.0f;
   orient.b = 0.0f;
   orient.c = 0.0f;
   orient.d = 0.0f;
+
+  Serial.println("Reading from 9DoF sensor...");
 
   byte c = readByte(LSM9DS1XG_ADDRESS, LSM9DS1XG_WHO_AM_I);
   byte d = readByte(LSM9DS1M_ADDRESS, LSM9DS1M_WHO_AM_I);
@@ -437,7 +442,7 @@ bool SensorHub::init()
 
     //Init altimeter
 
-    writeByte(MPL3115A2_ADDRESS, MPL3115A2_CTRL_REG1, MPL3115A2_CTRL_REG1_RST);
+/*    writeByte(MPL3115A2_ADDRESS, MPL3115A2_CTRL_REG1, MPL3115A2_CTRL_REG1_RST);
     delay(10);
   
     while(readByte(MPL3115A2_ADDRESS, MPL3115A2_CTRL_REG1) & MPL3115A2_CTRL_REG1_RST) delay(10);
@@ -454,7 +459,7 @@ bool SensorHub::init()
     writeByte(MPL3115A2_ADDRESS, MPL3115A2_PT_DATA_CFG, 
      MPL3115A2_PT_DATA_CFG_TDEFE |
      MPL3115A2_PT_DATA_CFG_PDEFE |
-     MPL3115A2_PT_DATA_CFG_DREM);
+     MPL3115A2_PT_DATA_CFG_DREM);*/
 
     
   }
@@ -482,6 +487,8 @@ long updateMillisMag   = 1000/MAG_RATE;
 //Update sensors and filterss
 void SensorHub::update()
 {
+
+  
   
   if (readByte(LSM9DS1XG_ADDRESS, LSM9DS1XG_STATUS_REG) & 0x01) {  // check if new accel data is ready  
     readAccelData(accelCount);  // Read the x/y/z adc values
