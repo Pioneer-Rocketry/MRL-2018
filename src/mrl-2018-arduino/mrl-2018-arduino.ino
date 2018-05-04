@@ -12,17 +12,17 @@
 #include "quatops.h"
 #include "sensorhub.h"
 
-#define SERVO_ONE_PIN 2         
+#define SERVO_ONE_PIN 2
 #define SERVO_TWO_PIN 3
 #define SERVO_THREE_PIN 4
 
 #define SERVO_HIGH 2000
 #define SERVO_LOW  1000
-#define MID_SERVO  1500     
+#define MID_SERVO  1500
 
 #define SERVO_OFFSET_1 0
-#define SERVO_OFFSET_2 0 
-#define SERVO_OFFSET_3 0        
+#define SERVO_OFFSET_2 0
+#define SERVO_OFFSET_3 0
 
 #define MAGNITUDE 250.0f
 
@@ -39,7 +39,7 @@ const float accLimitFreeFall = .1;
 const float accLimitLaunch = 2;
 const int preBurnoutLength = 2700;
 
-enum states{PRELAUNCH, PREBURNOUT, BURNOUT, POSTAPOGEE, LANDING};
+enum states {PRELAUNCH, PREBURNOUT, BURNOUT, POSTAPOGEE, LANDING};
 
 states launchState = PRELAUNCH;
 
@@ -66,62 +66,68 @@ long micros_last;
 File dataFile;
 
 
-void get_write_data(){
-    dataString = "";
-  
-    dataString += millis();
-    dataString += " , ";
-  
-    dataString += SensorHub::getGyro().x;
-    dataString += " , ";
-  
-    dataString += SensorHub::getGyro().y;
-    dataString += " , ";
-  
-    dataString += SensorHub::getGyro().z;
-    dataString += " , ";
-  
-  
-    dataString += SensorHub::getAccel().x;
-    dataString += " , ";
-  
-    dataString += SensorHub::getAccel().y;
-    dataString += " , ";
-  
-    dataString += SensorHub::getAccel().z;
-    dataString += " , ";
-  
-    
-    dataString += SensorHub::getMag().x;
-    dataString += " , ";
-  
-    dataString += SensorHub::getMag().y;
-    dataString += " , ";
-  
-    dataString += SensorHub::getMag().z;
-    dataString += " , ";
-  
-    dataString += SensorHub::getAltitude();
-    dataString += " , ";
+void get_write_data() {
+  char temp[10];
+  dataString = "";
 
-    dataString += SensorHub::getSpeed();
-    dataString += " , ";
-  
-    dataString += power;
-    dataString += " , ";
-  
-    dataString += stateString;
-  
-    dataString += "\n";
+  dataString += millis();
+  dataString += " , ";
 
-    Serial.print(dataString);
-  
-    Serial1.print(dataString);
-  
-    if (dataFile) {
-      dataFile.print(dataString);
-      dataFile.flush();
-    }
+  sprintf(temp, "%.4f , %.4f , %.4f , ", SensorHub::getGyro().x,SensorHub::getGyro().y,SensorHub::getGyro().z);
+  dataString += temp;//SensorHub::getGyro().x;
+  //dataString += " , ";
+
+  //dataString += SensorHub::getGyro().y;
+  //dataString += " , ";
+
+  //dataString += SensorHub::getGyro().z;
+  //dataString += " , ";
+
+  sprintf(temp, "%.4f , %.4f , %.4f , ", SensorHub::getAccel().x,SensorHub::getAccel().y,SensorHub::getAccel().z);
+  dataString += temp;
+  //dataString += SensorHub::getAccel().x;
+  //dataString += " , ";
+
+  //dataString += SensorHub::getAccel().y;
+  //dataString += " , ";
+
+  //dataString += SensorHub::getAccel().z;
+  //dataString += " , ";
+
+sprintf(temp, "%.4f , %.4f , %.4f , ", SensorHub::getMag().x,SensorHub::getMag().y,SensorHub::getMag().z);
+  dataString += temp;
+  //dataString += SensorHub::getMag().x;
+  //dataString += " , ";
+
+  //dataString += SensorHub::getMag().y;
+  //dataString += " , ";
+
+  //dataString += SensorHub::getMag().z;
+  //dataString += " , ";
+
+  sprintf(temp, "%.4f , %.4f , %.1f , ", SensorHub::getAltitude(),SensorHub::getSpeed(),power);
+  dataString += temp;
+  //dataString += SensorHub::getAltitude();
+  //dataString += " , ";
+
+  //dataString += SensorHub::getSpeed();
+  //dataString += " , ";
+
+  //dataString += power;
+  //dataString += " , ";
+
+  dataString += stateString;
+
+  dataString += "\n";
+
+  Serial.print(dataString);
+
+  Serial1.print(dataString + '\r');
+
+  if (dataFile) {
+    dataFile.print(dataString);
+    dataFile.flush();
+  }
 }// end function get_write_data
 
 
@@ -134,9 +140,9 @@ void setup() {
   servo3.attach(SERVO_THREE_PIN);
 
   //Zero out servos. Doing this first incase we reboot mid-flight.
- // servo1.writeMicroseconds((SERVO_HIGH - SERVO_LOW)/2 + SERVO_LOW);
+  // servo1.writeMicroseconds((SERVO_HIGH - SERVO_LOW)/2 + SERVO_LOW);
   //servo2.writeMicroseconds((SERVO_HIGH - SERVO_LOW)/2 + SERVO_LOW);
- // servo3.writeMicroseconds((SERVO_HIGH - SERVO_LOW)/2 + SERVO_LOW);
+  // servo3.writeMicroseconds((SERVO_HIGH - SERVO_LOW)/2 + SERVO_LOW);
   servo1.writeMicroseconds( MID_SERVO + SERVO_OFFSET_1);
   servo2.writeMicroseconds( MID_SERVO + SERVO_OFFSET_2);
   servo3.writeMicroseconds( MID_SERVO + SERVO_OFFSET_3);
@@ -153,7 +159,7 @@ void setup() {
 
   Serial1.println("Pioneer Rocketry XBee Initialized");
 
-  if(!SD.begin(sd_chipSelect))
+  if (!SD.begin(sd_chipSelect))
   {
     Serial.println("SD failed!");
   }
@@ -168,8 +174,7 @@ void setup() {
 
   char name_string[20];
 
-  do
-  {
+  do {
 
     sprintf(name_string, "MRLData%d.csv", count);
 
@@ -177,9 +182,9 @@ void setup() {
 
     count++;
 
-  }while(SD.exists(name_string));
+  } while (SD.exists(name_string));
 
-  
+
 
   dataFile = SD.open(name_string, FILE_WRITE);
 
@@ -206,71 +211,71 @@ long lastStep = 0;
 
 void loop() {
 
-  switch(launchState){
+  switch (launchState) {
     case PRELAUNCH:
       stateString = "PRELAUNCH";
-      
-      if( SensorHub::getAccel().z > accLimitLaunch ){
+
+      if ( SensorHub::getAccel().z > accLimitLaunch ) {
         launchState = PREBURNOUT;
         preLaunchStartTime = millis();
       }
       break;
     case PREBURNOUT:
       stateString = "PREBURNOUT";
-      if( millis() - preLaunchStartTime >= preBurnoutLength ){
+      if ( millis() - preLaunchStartTime >= preBurnoutLength ) {
         launchState = BURNOUT;
       }
       break;
     case BURNOUT:
       stateString = "BURNOUT";
 
-        if( millis() - lastStep >= stepLength){
+      if ( millis() - lastStep >= stepLength) {
 
         currentState = -currentState;
 
-        power =  currentState*oneDegree + MID_SERVO;
+        power =  currentState * oneDegree + MID_SERVO;
 
         Serial.println(power);
 
         servo1.writeMicroseconds(power  + SERVO_OFFSET_1);
         servo2.writeMicroseconds(power  + SERVO_OFFSET_2);
         servo3.writeMicroseconds(power  + SERVO_OFFSET_3);
-      
+
         lastStep = millis();
       }
-  
-      if( SensorHub::getAccel().z > accLimitFreeFall ){
+
+      if ( SensorHub::getAccel().z > accLimitFreeFall ) {
         launchState = POSTAPOGEE;
       }
       break;
     case POSTAPOGEE:
       stateString = "POSTAPOGEE";
-      if( impactDetected == true ){
+      if ( impactDetected == true ) {
         launchState = LANDING;
       }
       break;
     default:
       stateString = "LANDING";
-      launchState = LANDING; 
-    
+      launchState = LANDING;
+
   }
-  
-  if(launchState != BURNOUT){
+
+  if (launchState != BURNOUT) {
     power = MID_SERVO;
     servo1.writeMicroseconds(MID_SERVO);
     servo2.writeMicroseconds(MID_SERVO);
-    servo3.writeMicroseconds(MID_SERVO);  
+    servo3.writeMicroseconds(MID_SERVO);
   }
 
-// write data at constant time intervals 
-  if(millis() - last_write >= WRITE_RATE){
+  // write data at constant time intervals
+  if (millis() - last_write >= WRITE_RATE) {
     SensorHub::update();
     get_write_data();
     last_write = millis();
 
   }
 
-// change fins at set times ( step response )
+  // change fins at set times ( step response )
 
 
 
