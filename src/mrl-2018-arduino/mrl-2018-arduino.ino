@@ -1,5 +1,5 @@
-#include <i2c_t3.h>
-
+//#include <i2c_t3.h>
+#include <Adafruit_BNO055.h>
 
 #include <Servo.h>
 
@@ -53,7 +53,7 @@ String dataString;
 
 bool impactDetected = false;
 
-
+Adafruit_BNO055 bno = Adafruit_BNO055(); //orientation sensor
 
 Servo servo1;
 Servo servo2;
@@ -74,47 +74,17 @@ void get_write_data() {
   dataString += " , ";
 
   sprintf(temp, "%.4f , %.4f , %.4f , ", SensorHub::getGyro().x,SensorHub::getGyro().y,SensorHub::getGyro().z);
-  dataString += temp;//SensorHub::getGyro().x;
-  //dataString += " , ";
+  dataString += temp;
 
-  //dataString += SensorHub::getGyro().y;
-  //dataString += " , ";
-
-  //dataString += SensorHub::getGyro().z;
-  //dataString += " , ";
 
   sprintf(temp, "%.4f , %.4f , %.4f , ", SensorHub::getAccel().x,SensorHub::getAccel().y,SensorHub::getAccel().z);
   dataString += temp;
-  //dataString += SensorHub::getAccel().x;
-  //dataString += " , ";
 
-  //dataString += SensorHub::getAccel().y;
-  //dataString += " , ";
-
-  //dataString += SensorHub::getAccel().z;
-  //dataString += " , ";
-
-sprintf(temp, "%.4f , %.4f , %.4f , ", SensorHub::getMag().x,SensorHub::getMag().y,SensorHub::getMag().z);
+  sprintf(temp, "%.4f , %.4f , %.4f , ", SensorHub::getMag().x,SensorHub::getMag().y,SensorHub::getMag().z);
   dataString += temp;
-  //dataString += SensorHub::getMag().x;
-  //dataString += " , ";
-
-  //dataString += SensorHub::getMag().y;
-  //dataString += " , ";
-
-  //dataString += SensorHub::getMag().z;
-  //dataString += " , ";
 
   sprintf(temp, "%.4f , %.4f , %.1f , ", SensorHub::getAltitude(),SensorHub::getSpeed(),power);
   dataString += temp;
-  //dataString += SensorHub::getAltitude();
-  //dataString += " , ";
-
-  //dataString += SensorHub::getSpeed();
-  //dataString += " , ";
-
-  //dataString += power;
-  //dataString += " , ";
 
   dataString += stateString;
 
@@ -141,7 +111,7 @@ void setup() {
 
   //Zero out servos. Doing this first incase we reboot mid-flight.
   // servo1.writeMicroseconds((SERVO_HIGH - SERVO_LOW)/2 + SERVO_LOW);
-  //servo2.writeMicroseconds((SERVO_HIGH - SERVO_LOW)/2 + SERVO_LOW);
+  // servo2.writeMicroseconds((SERVO_HIGH - SERVO_LOW)/2 + SERVO_LOW);
   // servo3.writeMicroseconds((SERVO_HIGH - SERVO_LOW)/2 + SERVO_LOW);
   servo1.writeMicroseconds( MID_SERVO + SERVO_OFFSET_1);
   servo2.writeMicroseconds( MID_SERVO + SERVO_OFFSET_2);
@@ -195,8 +165,16 @@ void setup() {
 
   SensorHub::init();
 
+  if(!bno.begin())
+  {
+    /* There was a problem detecting the BNO055 ... check your connections */
+    Serial.print("Ooops, no BNO055 detected ... Check your wiring or I2C ADDR!");
+    while(1);
+  }
+  bno.setExtCrystalUse(true);
+}// end setup
 
-}
+
 
 long last_read = 0;
 
@@ -205,11 +183,14 @@ long last_write = 0;
 float RADS_TO_DEGREES;
 long currentTime;
 int currentState = 1;
-int oneDegree = 50; //millsec per degree
-int stepLength = 500; // millsecs
+int oneDegree = 50; //millisec per degree
+int stepLength = 500; // millisecs
 long lastStep = 0;
 
 void loop() {
+  
+  // control execution code
+  imu::Vector<3> euler;
 
   switch (launchState) {
     case PRELAUNCH:
@@ -221,39 +202,32 @@ void loop() {
       }
       break;
     case PREBURNOUT:
+    {
       stateString = "PREBURNOUT";
       if ( millis() - preLaunchStartTime >= preBurnoutLength ) {
         launchState = BURNOUT;
       }
-      break;
+    }break;
     case BURNOUT:
       stateString = "BURNOUT";
 
-      if ( millis() - lastStep >= stepLength) {
+      // control execution code
+      euler = bno.getVector(Adafruit_BNO055::VECTOR_EULER);
 
-        currentState = -currentState;
 
-        power =  currentState * oneDegree + MID_SERVO;
-
-        Serial.println(power);
-
-        servo1.writeMicroseconds(power  + SERVO_OFFSET_1);
-        servo2.writeMicroseconds(power  + SERVO_OFFSET_2);
-        servo3.writeMicroseconds(power  + SERVO_OFFSET_3);
-
-        lastStep = millis();
-      }
+      //end control section
 
       if ( SensorHub::getAccel().z > accLimitFreeFall ) {
         launchState = POSTAPOGEE;
       }
       break;
     case POSTAPOGEE:
+    {
       stateString = "POSTAPOGEE";
       if ( impactDetected == true ) {
         launchState = LANDING;
       }
-      break;
+    }break;
     default:
       stateString = "LANDING";
       launchState = LANDING;
