@@ -257,30 +257,31 @@ void loop() {
       }
       break;
     case PREBURNOUT:
-    {
+    
       stateString = "PREBURNOUT";
-      if ( millis() - preLaunchStartTime >= preBurnoutLength ) {
+      if ( millis() - preLaunchStartTime >= ConfigManager::getBurntime() ) {
         launchState = BURNOUT;
       }
-    }break;
+    break;
     case BURNOUT:
       stateString = "BURNOUT";
 
-      if ( SensorHub::getAccel().z > accLimitFreeFall ) {
+      point cur_eulers = SensorHub::getEuler();
+
+      if ( cur_eulers.x > 45 || cur_eulers.y > 45 ) {
         launchState = POSTAPOGEE;
       }
 
       burnout_time = millis();
 
-
       break;
     case POSTAPOGEE:
-    {
+    
       stateString = "POSTAPOGEE";
       if ( impactDetected == true ) {
         launchState = LANDING;
       }
-    }break;
+    break;
     default:
       stateString = "LANDING";
       launchState = LANDING;
@@ -395,8 +396,6 @@ void loop() {
     get_write_data();
     last_write = millis();
   }
-
-
 
   SensorHub::update();
 
