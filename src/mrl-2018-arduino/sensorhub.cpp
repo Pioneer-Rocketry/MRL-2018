@@ -6,7 +6,7 @@
 
 #include "sensorhub.h"
 //#include <SparkFunLSM9DS1.h>
-
+#include <Adafruit_BNO055.h>
 #include <i2c_t3.h>
 
 
@@ -52,6 +52,10 @@ double Temperature, Pressure; // stores MS5611 pressures sensor pressure and tem
 point SensorHub::accel;
 point SensorHub::mag;
 point SensorHub::gyro;
+point SensorHub::euler_cur;
+point SensorHub::euler_continuous;
+
+Adafruit_BNO055 bno = Adafruit_BNO055();
 
 float SensorHub::altitude;
 
@@ -349,7 +353,7 @@ bool SensorHub::init()
 
   bool success = true;
 
-  Wire.begin(I2C_MASTER, 0x00, I2C_PINS_16_17, I2C_PULLUP_EXT, I2C_RATE_400);
+  //Wire.begin(I2C_MASTER, 0x00, I2C_PINS_16_17, I2C_PULLUP_EXT, I2C_RATE_400);
 
   Serial.println("Sensorhub Init!");
 
@@ -359,88 +363,26 @@ bool SensorHub::init()
   orient.c = 0.0f;
   orient.d = 0.0f;
 
-  Serial.println("Reading from 9DoF sensor...");
-
-  byte c = readByte(LSM9DS1XG_ADDRESS, LSM9DS1XG_WHO_AM_I);
-  byte d = readByte(LSM9DS1M_ADDRESS, LSM9DS1M_WHO_AM_I);
-
-  Serial.printf("XG Address: %02x", c);
-  Serial.printf("M Address: %02x", c);
-
-  //Make sure we are actually connected.
-  if (c == 0x68 && d == 0x3D)
+  if(!bno.begin())
   {
+    Serial.println("No BNO055 found");
+    Serial1.println("No BNO055 found");
+    success = false;
+  }
+  else
+  {
+    Serial.println("BNO055 found");
+    Serial1.println("BNO055 found");
 
-       // get sensor resolutions, only need to do this once
-    switch (Ascale)
-    {
-    // Possible accelerometer scales (and their register bit settings) are:
-    // 2 Gs (00), 16 Gs (01), 4 Gs (10), and 8 Gs  (11). 
-      case AFS_2G:
-            aRes = 2.0/32768.0;
-            break;
-      case AFS_16G:
-            aRes = 16.0/32768.0;
-            break;
-      case AFS_4G:
-            aRes = 4.0/32768.0;
-            break;
-      case AFS_8G:
-            aRes = 8.0/32768.0;
-            break;
-    }
+  }
 
-    switch (Gscale)
-    {
-     // Possible gyro scales (and their register bit settings) are:
-    // 245 DPS (00), 500 DPS (01), and 2000 DPS  (11). 
-      case GFS_245DPS:
-            gRes = 245.0/32768.0;
-            break;
-      case GFS_500DPS:
-            gRes = 500.0/32768.0;
-            break;
-      case GFS_2000DPS:
-            gRes = 2000.0/32768.0;
-            break;
-    }
 
-    switch (Mscale)
-    {
-     // Possible magnetometer scales (and their register bit settings) are:
-    // 4 Gauss (00), 8 Gauss (01), 12 Gauss (10) and 16 Gauss (11)
-      case MFS_4G:
-            mRes = 4.0/32768.0;
-            break;
-      case MFS_8G:
-            mRes = 8.0/32768.0;
-            break;
-      case MFS_12G:
-            mRes = 12.0/32768.0;
-            break;
-      case MFS_16G:
-            mRes = 16.0/32768.0;
-            break;
-    }
-    
+  bno.setExtCrystalUse(true);
 
-    Serial.println("Perform gyro and accel self test");
-    selftestLSM9DS1(); // check function of gyro and accelerometer via self test
-    
-    Serial.println(" Calibrate gyro and accel");
-    accelgyrocalLSM9DS1(gyroBias, accelBias); // Calibrate gyro and accelerometers, load biases in bias registers
-    Serial.println("accel biases (mg)"); Serial.println(1000.*accelBias[0]); Serial.println(1000.*accelBias[1]); Serial.println(1000.*accelBias[2]);
-    Serial.println("gyro biases (dps)"); Serial.println(gyroBias[0]); Serial.println(gyroBias[1]); Serial.println(gyroBias[2]);
+  bno.setAxisRemap(0x18);
 
-    //Don't calibrate magnetometer. TODO: Add biases we have calculated previously.
-//    magcalLSM9DS1(magBias);
-//    Serial.println("mag biases (mG)"); Serial.println(1000.*magBias[0]); Serial.println(1000.*magBias[1]); Serial.println(1000.*magBias[2]); 
-//    delay(2000); // add delay to see results before serial spew of data
-    
-    initLSM9DS1(); 
-    Serial.println("LSM9DS1 initialized for active data mode...."); // Initialize device for active mode read of acclerometer, gyroscope, and temperature
+  bno.setAxisSign(0x01);
 
-    //Init altimeter
 
 /*    writeByte(MPL3115A2_ADDRESS, MPL3115A2_CTRL_REG1, MPL3115A2_CTRL_REG1_RST);
     delay(10);
@@ -460,14 +402,10 @@ bool SensorHub::init()
      MPL3115A2_PT_DATA_CFG_TDEFE |
      MPL3115A2_PT_DATA_CFG_PDEFE |
      MPL3115A2_PT_DATA_CFG_DREM);*/
-
-    
-  }
-  else
-  {
-    success = false; 
-  }
   
+  euler_cur.x = 0;
+  euler_cur.y = 0;
+  euler_cur.z = 0;
 
   return success;  
   
@@ -488,41 +426,96 @@ long updateMillisMag   = 1000/MAG_RATE;
 void SensorHub::update()
 {
 
-  
-  
-  if (readByte(LSM9DS1XG_ADDRESS, LSM9DS1XG_STATUS_REG) & 0x01) {  // check if new accel data is ready  
-    readAccelData(accelCount);  // Read the x/y/z adc values
+  imu::Vector<3> euler_data = bno.getVector(Adafruit_BNO055::VECTOR_EULER);
 
- 
-    // Now we'll calculate the accleration value into actual g's
-    accel.x = (float)accelCount[0]*aRes - accelBias[0];  // get actual g value, this depends on scale being set
-    accel.y = (float)accelCount[1]*aRes - accelBias[1];   
-    accel.z = (float)accelCount[2]*aRes - accelBias[2];
-    accelUpdated = true; 
-  } 
-   
-  if (readByte(LSM9DS1XG_ADDRESS, LSM9DS1XG_STATUS_REG) & 0x02) {  // check if new gyro data is ready  
-    readGyroData(gyroCount);  // Read the x/y/z adc values
+  imu::Vector<3> gyro_data = bno.getVector(Adafruit_BNO055::VECTOR_GYROSCOPE); 
 
-    // Calculate the gyro value into actual degrees per second
-    gyro.x = (float)gyroCount[0]*gRes - gyroBias[0];  // get actual gyro value, this depends on scale being set
-    gyro.y = (float)gyroCount[1]*gRes - gyroBias[1];  
-    gyro.z = (float)gyroCount[2]*gRes - gyroBias[2];   
+  imu::Vector<3> accel_data = bno.getVector(Adafruit_BNO055::VECTOR_ACCELEROMETER); 
+
+  Serial.printf("Euler Raw: %f, %f, %f   ", euler_data.x(), euler_data.y(), euler_data.z());
+
+//  Serial.printf("Euler Comp: %f, %f, %f", euler_data.x(), euler_data.y(), euler_data.z());
+
+  float euler_x_diff = euler_data.x() - euler_cur.x;
+
+  if(abs(euler_cur.x - euler_data.x()) > 25)
+  {
+
+    float hi_half;
+    float lo_half;
+
+    if(euler_data.x() > 180)
+    {
+       //The data jumped from ~0 to ~360
+       hi_half = 360.0f - euler_data.x();
+       lo_half = euler_cur.x;
+
+      //Serial.printf("- (%f + %f)", hi_half, lo_half); 
+
+       euler_x_diff = - (hi_half + lo_half);
+      
+    }
+    else if(euler_data.x() <= 180)
+    {
+       //The data jumped from ~360 to ~0
+       hi_half = 360.0f - euler_cur.x;
+       lo_half = euler_data.x();
+
+      //Serial.printf("(%f + %f)", hi_half, lo_half); 
+
+       euler_x_diff = (hi_half + lo_half);
+
+      
+    }
     
-    gyroUpdated = true;
   }
+
+  euler_continuous.x += euler_x_diff;
   
-  if (readByte(LSM9DS1M_ADDRESS, LSM9DS1M_STATUS_REG_M) & 0x08) {  // check if new mag data is ready  
-    readMagData(magCount);  // Read the x/y/z adc values
-    
-    // Calculate the magnetometer values in milliGauss
-    // Include factory calibration per data sheet and user environmental corrections
-    //The accel and gyro on the board aren't aligned, doing -x aligns them.
-    mag.x = -(float)magCount[0]*mRes; // - magBias[0];  // get actual magnetometer value, this depends on scale being set
-    mag.y = (float)magCount[1]*mRes; // - magBias[1];  
-    mag.z = (float)magCount[2]*mRes; // - magBias[2];   
-    magUpdated = true;
-  }
+
+  Serial.printf("%f\n", euler_continuous.x);
+
+  gyro.x = gyro_data.x();
+  gyro.y = gyro_data.y();
+  gyro.z = gyro_data.z();
+
+  euler_cur.x = euler_data.x();
+  euler_cur.y = euler_data.y();
+  euler_cur.z = euler_data.z();
+
+//  if (readByte(LSM9DS1XG_ADDRESS, LSM9DS1XG_STATUS_REG) & 0x01) {  // check if new accel data is ready  
+//    readAccelData(accelCount);  // Read the x/y/z adc values
+//
+// 
+//    // Now we'll calculate the accleration value into actual g's
+//    accel.x = (float)accelCount[0]*aRes - accelBias[0];  // get actual g value, this depends on scale being set
+//    accel.y = (float)accelCount[1]*aRes - accelBias[1];   
+//    accel.z = (float)accelCount[2]*aRes - accelBias[2];
+//    accelUpdated = true; 
+//  } 
+//   
+//  if (readByte(LSM9DS1XG_ADDRESS, LSM9DS1XG_STATUS_REG) & 0x02) {  // check if new gyro data is ready  
+//    readGyroData(gyroCount);  // Read the x/y/z adc values
+//
+//    // Calculate the gyro value into actual degrees per second
+//    gyro.x = (float)gyroCount[0]*gRes - gyroBias[0];  // get actual gyro value, this depends on scale being set
+//    gyro.y = (float)gyroCount[1]*gRes - gyroBias[1];  
+//    gyro.z = (float)gyroCount[2]*gRes - gyroBias[2];   
+//    
+//    gyroUpdated = true;
+//  }
+//  
+//  if (readByte(LSM9DS1M_ADDRESS, LSM9DS1M_STATUS_REG_M) & 0x08) {  // check if new mag data is ready  
+//    readMagData(magCount);  // Read the x/y/z adc values
+//    
+//    // Calculate the magnetometer values in milliGauss
+//    // Include factory calibration per data sheet and user environmental corrections
+//    //The accel and gyro on the board aren't aligned, doing -x aligns them.
+//    mag.x = -(float)magCount[0]*mRes; // - magBias[0];  // get actual magnetometer value, this depends on scale being set
+//    mag.y = (float)magCount[1]*mRes; // - magBias[1];  
+//    mag.z = (float)magCount[2]*mRes; // - magBias[2];   
+//    magUpdated = true;
+//  }
 
   //TODO: Use readByte instead.
   if(!(readByte(MPL3115A2_ADDRESS, MPL3115A2_CTRL_REG1) & MPL3115A2_CTRL_REG1_OST))
@@ -687,6 +680,18 @@ point SensorHub::getAccel()
 point SensorHub::getMag()
 {
   return mag;
+}
+
+point SensorHub::getEuler()
+{
+  point combined;
+
+  combined.z = euler_continuous.x;
+  combined.y = euler_cur.y;
+  combined.x = euler_cur.z;
+
+  return combined;
+  
 }
 
 point SensorHub::getGyro()

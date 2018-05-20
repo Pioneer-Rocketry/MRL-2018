@@ -67,6 +67,8 @@ public:
 
 	static point getGyro();
 
+  static point getEuler();
+
   static float getAltitude();
 
   static float getSpeed();
@@ -83,6 +85,8 @@ protected:
 	static point accel;
 	static point mag;
 	static point gyro;
+  static point euler_cur;
+  static point euler_continuous;
 
   static float pitot_velocity;
 

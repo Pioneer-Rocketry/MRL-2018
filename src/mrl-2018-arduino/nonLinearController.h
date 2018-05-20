@@ -56,11 +56,6 @@ private:
   static double cos_x3;
   static double sin_x3;
 
-
-
-
-
-  
     
   // This function will preform a efficent differentiator and
   // DOES NOT UPDATE THE PAST INPUTS OF THE SIGNAL

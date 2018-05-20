@@ -1,5 +1,6 @@
 #include "nonLinearController.h"
-#include "math.h"
+#include <math.h>
+#include "Arduino.h"
 
 //varibles for calculating V1 
   double nonLinearController::integrator_X_history[2] = {0,0};
@@ -26,11 +27,11 @@
   double nonLinearController::k1[4] = {-732.5498, -32.0,-40.0,-46.0};
   double nonLinearController::k2[4] = {-209.9749, -20.0, -40.0,-80.0};
   
-double cos_x2;
-double sin_x2;
-double tan_x2;
-double cos_x3;
-double sin_x3;
+double nonLinearController::cos_x2;
+double nonLinearController::sin_x2;
+double nonLinearController::tan_x2;
+double nonLinearController::cos_x3;
+double nonLinearController::sin_x3;
 
 double nonLinearController::differentiator(double x_n, double *xHistory){
   double xDiff_n;
@@ -50,6 +51,9 @@ double nonLinearController::simpsonIntegrator( double x_n, double t_sample,
   yHistory[1] = yHistory[0];
   yHistory[0] = y_n;
   
+  
+
+  return y_n;
 
 }// end function simpsonIntegrator
 
@@ -58,7 +62,7 @@ void nonLinearController::updateHistory( double x_n, double *history, int length
   for( int i = length-1; i > 0; i--){
     history[i] = history[i-1];
   }
-  history[0];
+  history[0] = x_n;
 }// end function updateHistory
 
 void nonLinearController::phiPart(double x2, double x3, double x4, double x5, double x6, double *out1){
@@ -96,20 +100,23 @@ void nonLinearController::Ainv(double v, double x2, double x3, double *x){
   t4 = cos_x2;
   t5 = cos_x3;
   t6 = sin_x3;
-  t7 = t4 * t6 * 3.42298445126351E+31;
-  t8 = t5 * 2.1393652820396941E+30;
-  t9 = t6 * 6.1758156074031739E+29;
-  t10 = t2 * 1.4839110691509629;
-  x[0] = t2 * (t3 * 5.952073575569408E+15 + t4 * t5 * 9.7118480394059776E+16) *
-    4.3181747218863512E-16;
-  x[1] = t2 * ((t3 * -6.0559281793151651E+29 + t7) + t4 * t5 *
-               9.8813049718450782E+30) * -2.450344563562319E-30;
-  x[2] = t2 * ((t3 * 6.0559281793151651E+29 + t7) - t4 * t5 *
-               9.8813049718450782E+30) * 2.450344563562319E-30;
-  x[3] = t2 * t6 * 41.937456706560617;
-  x[4] = t2 * (t8 - t9) * 3.92055130169971E-29;
-  x[5] = t2 * (t8 + t9) * -3.92055130169971E-29;
-  x[6] = t2 * 2.57020936568324;
+  t7 = t4 * t6 * 1.533849832101562E+33;
+  t8 = t5 * 7.9888012088626876E+30;
+  t9 = t6 * 2.306168264219644E+30;
+  t10 = t2 * 1.011045219834386;
+  x[0] = t2 * (t3 * 1.553184514117888E+15 + t4 * t5 * 2.375679894572646E+16) *
+    1.1274782059601759E-15;
+    
+  x[1] = t2 * ((t3 * -2.894858561874411E+31 + t7) + t4 * t5 *
+               4.4278430673019E+32) * -3.4925548113121739E-32;
+               
+  x[2] = t2 * ((t3 * 2.894858561874411E+31 + t7) - t4 * t5 * 4.4278430673019E+32)
+    * 3.4925548113121739E-32;
+    
+  x[3] = t2 * t6 * 26.785273054683781;
+  x[4] = t2 * (t8 - t9) * 6.7057052377200923E-30;
+  x[5] = t2 * (t8 + t9) * -6.7057052377200923E-30;
+  x[6] = t2 * 1.751181689502801;
   x[7] = t10;
   x[8] = t10;
 
@@ -132,18 +139,15 @@ void nonLinearController::Bmax(double x2, double x3, double x4, double x5, doubl
   t5 = sin_x3;
   t6 = tan_x2;
   t7 = t6 * t6;
-  Bx[0] = 1.0 / (t2 * t2) * (((((t4 * x4 * x5 * 1.801439850948198E+16 + t2 * t3 *
-    x5 * x6 * 1.24756913567531E+14) + t2 * t5 * x4 * x6 * 1.24756913567531E+14)
-    - t3 * t4 * t5 * (x4 * x4) * 1.801439850948198E+16) + t3 * t4 * t5 * (x5 *
-    x5) * 1.801439850948198E+16) - t3 * t3 * t4 * x4 * x5 *
-    3.6028797018963968E+16) * -1.110223024625157E-16;
-  Bx[1] = (t3 * x4 - t5 * x5) * ((x6 * 1.24756913567531E+14 - t3 * t6 * x4 *
-    9.007199254740992E+15) + t5 * t6 * x5 * 9.007199254740992E+15) *
-    1.110223024625157E-16;
-  Bx[2] = (t3 * x5 + t5 * x4) * ((((t3 * x4 * -9.007199254740992E+15 + t5 * x5 *
-    9.007199254740992E+15) + t6 * x6 * 1.24756913567531E+14) - t3 * t7 * x4 *
-    1.801439850948198E+16) + t5 * t7 * x5 * 1.801439850948198E+16) *
-    1.110223024625157E-16;
+  Bx[0] = 1.0 / (t2 * t2) * (((((t4 * x4 * x5 * 286.0 + t2 * t3 * x5 * x6 * 2.0)
+    + t2 * t5 * x4 * x6 * 2.0) - t3 * t4 * t5 * (x4 * x4) * 286.0) + t3 * t4 *
+    t5 * (x5 * x5) * 286.0) - t3 * t3 * t4 * x4 * x5 * 572.0) *
+    -0.006993006993006993;
+  Bx[1] = (t3 * x4 - t5 * x5) * ((x6 * 2.0 - t3 * t6 * x4 * 143.0) + t5 * t6 *
+    x5 * 143.0) * 0.006993006993006993;
+  Bx[2] = (t3 * x5 + t5 * x4) * ((((t3 * x4 * -143.0 + t5 * x5 * 143.0) + t6 *
+    x6 * 2.0) - t3 * t7 * x4 * 286.0) + t5 * t7 * x5 * 286.0) *
+    0.006993006993006993;
 }// end function Bmax
 
 
@@ -223,9 +227,12 @@ void nonLinearController::controlEffert( double e_X, double e_Y, double e_Z, dou
   
   
 // Calculate the matrix multiplication of A x (V-B)
+  
   con_effert[0] = Ainverse[0]*v_B_difference[0] + Ainverse[3]*v_B_difference[1] + Ainverse[6]*v_B_difference[2];
   con_effert[1] = Ainverse[1]*v_B_difference[0] + Ainverse[4]*v_B_difference[1] + Ainverse[7]*v_B_difference[2];
   con_effert[2] = Ainverse[2]*v_B_difference[0] + Ainverse[5]*v_B_difference[1] + Ainverse[8]*v_B_difference[2];
+
+  Serial.printf("Pre-out: %f, %f, %f\n", con_effert[0],con_effert[1],con_effert[2]);
 
 
 }// end function ControlEffert
